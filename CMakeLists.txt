@@ -25,8 +25,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-option(BUILD_PLUGIN "Build PostgreSQL plugin" ON)
-
 #-----------------------------------------------------------------------------
 #
 #  Find external dependencies
@@ -170,10 +168,5 @@ add_subdirectory(test)
 
 add_subdirectory(man)
 add_subdirectory(src)
-
-if(BUILD_PLUGIN)
-    add_subdirectory(postgresql-plugin)
-endif()
-
 
 #-----------------------------------------------------------------------------

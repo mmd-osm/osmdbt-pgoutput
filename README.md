@@ -102,22 +102,6 @@ might have to set the `PG_CONFIG` variable to the full path like so:
 cmake -DPG_CONFIG=/usr/lib/postgresql/14/bin/pg_config ..
 ```
 
-If you don't want to build the PostgreSQL plugin set `BUILD_PLUGIN` to `OFF`.
-
-```
-cmake -DBUILD_PLUGIN=OFF ..
-```
-
-If you only want to build the PostgreSQL plugin:
-
-```
-cd postgresql-plugin
-mkdir build
-cd build
-cmake ..
-cmake --build .
-```
-
 ## Database Setup
 
 You need a PostgreSQL database with

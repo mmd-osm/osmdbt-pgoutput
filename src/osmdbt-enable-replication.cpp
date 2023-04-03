@@ -15,7 +15,7 @@ bool app(osmium::VerboseOutput &vout, Config const &config,
     pqxx::connection db{config.db_connection()};
     db.prepare("enable-replication",
                "SELECT * FROM pg_create_logical_replication_slot($1, "
-               "'osm-logical');");
+               "'pgoutput');");
 
     pqxx::work txn{db};
     vout << "Database version: " << get_db_version(txn) << '\n';

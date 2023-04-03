@@ -25,11 +25,11 @@ bool app(osmium::VerboseOutput &vout, Config const &config,
                 ? txn.exec(
                       "SELECT slot_name, database, confirmed_flush_lsn FROM "
                       "pg_replication_slots WHERE slot_type = 'logical' AND "
-                      "plugin = 'osm-logical';")
+                      "plugin = 'pgoutput';")
                 : txn.exec(
                       "SELECT slot_name, database, 'unknown' AS lsn FROM "
                       "pg_replication_slots WHERE slot_type = 'logical' AND "
-                      "plugin = 'osm-logical';");
+                      "plugin = 'pgoutput';");
 
         if (result.empty()) {
             vout << "Replication not enabled\n";
