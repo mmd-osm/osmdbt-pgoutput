@@ -16,17 +16,27 @@ bool app(osmium::VerboseOutput &vout, Config const &config,
     db.prepare("disable-replication",
                "SELECT * FROM pg_drop_replication_slot($1);");
 
-    pqxx::work txn{db};
-    vout << "Database version: " << get_db_version(txn) << '\n';
+    {
+        pqxx::work txn{db};
+        vout << "Database version: " << get_db_version(txn) << '\n';
 
-    pqxx::result const result =
-        txn.exec_prepared("disable-replication", config.replication_slot());
+        pqxx::result const result =
+            txn.exec_prepared("disable-replication", config.replication_slot());
 
-    if (result.size() == 1 && result[0][0].c_str()[0] == '\0') {
-        vout << "Replication disabled.\n";
+        if (result.size() == 1 && result[0][0].c_str()[0] == '\0') {
+            vout << "Replication disabled.\n";
+        }
+
+        txn.commit();
     }
 
-    txn.commit();
+    {
+        pqxx::work txn{db};
+        txn.exec("DROP PUBLICATION IF EXISTS " + config.publication() + ";");
+        vout << "Publication dropped.\n";
+
+        txn.commit();
+    }
 
     vout << "Done.\n";
 

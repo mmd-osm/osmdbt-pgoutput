@@ -67,7 +67,7 @@ bool app(osmium::VerboseOutput &vout, Config const &config,
     vout << "Connecting to database...\n";
     pqxx::connection db{config.db_connection()};
 
-    std::string select{"SELECT * FROM pg_logical_slot_peek_changes($1, NULL, "};
+    std::string select{"SELECT * FROM pg_logical_slot_peek_binary_changes($1, NULL, "};
     if (options.max_changes() > 0) {
         vout << "Reading up to " << options.max_changes()
              << " changes (change with --max-changes)\n";
@@ -76,7 +76,7 @@ bool app(osmium::VerboseOutput &vout, Config const &config,
         vout << "Reading any number of changes (change with --max-changes)\n";
         select += "NULL";
     }
-    select += ");";
+    select += ", 'proto_version', '1', 'publication_names', $2);";
 
     db.prepare("peek", select);
 
@@ -88,7 +88,7 @@ bool app(osmium::VerboseOutput &vout, Config const &config,
 
         vout << "Reading replication log...\n";
         pqxx::result const result =
-            txn.exec_prepared("peek", config.replication_slot());
+            txn.exec_prepared("peek", config.replication_slot(), config.publication());
 
         if (result.empty()) {
             vout << "No changes found.\n";
@@ -106,7 +106,8 @@ bool app(osmium::VerboseOutput &vout, Config const &config,
 
         bool has_actual_data = false;
         for (auto const &row : result) {
-            char const *const message = row[2].c_str();
+            std::string message = row[2].as<std::string>();
+            vout << message << "\n";
 
             data.append(row[0].c_str());
             data += ' ';

@@ -14,21 +14,31 @@ bool app(osmium::VerboseOutput &vout, Config const &config,
     vout << "Connecting to database...\n";
     pqxx::connection db{config.db_connection()};
     db.prepare("enable-replication",
-               "SELECT * FROM pg_create_logical_replication_slot($1, "
-               "'pgoutput');");
+               "SELECT * FROM pg_create_logical_replication_slot($1, 'pgoutput');");
 
-    pqxx::work txn{db};
-    vout << "Database version: " << get_db_version(txn) << '\n';
+    {
+        pqxx::work txn{db};
 
-    pqxx::result const result =
-        txn.exec_prepared("enable-replication", config.replication_slot());
+        vout << "Database version: " << get_db_version(txn) << '\n';
 
-    if (result.size() == 1 &&
-        result[0][0].c_str() == config.replication_slot()) {
-        vout << "Replication enabled.\n";
+        txn.exec("CREATE PUBLICATION " + config.publication() + " FOR TABLE ONLY nodes, ways, relations;");  // TODO: table names as config option
+        txn.commit();
+        vout << "Publication created.\n";
     }
 
-    txn.commit();
+    {
+        pqxx::work txn{db};
+
+        pqxx::result const result =
+            txn.exec_prepared("enable-replication", config.replication_slot());
+
+        if (result.size() == 1 &&
+            result[0][0].c_str() == config.replication_slot()) {
+            vout << "Replication enabled.\n";
+        }
+
+        txn.commit();
+    }
 
     vout << "Done.\n";
 
