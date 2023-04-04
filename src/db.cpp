@@ -42,9 +42,7 @@ void catchup_to_lsn(pqxx::dbtransaction &txn,
                            "SELECT * FROM pg_replication_slot_advance($1,"
                            " CAST ($2 AS pg_lsn));");
     } else {
-        txn.conn().prepare("advance",
-                           "SELECT * FROM pg_logical_slot_get_changes($1,"
-                           " CAST ($2 AS pg_lsn), NULL);");
+        throw database_error{"Unsupported database version, PostgreSQL 11 or newer required"};
     }
 
     pqxx::result const result =
