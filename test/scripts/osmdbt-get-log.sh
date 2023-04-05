@@ -19,7 +19,7 @@ psql --quiet <"$SRCDIR/meta.sql"
 psql --quiet <"$SRCDIR/testdata.sql"
 
 # Test that replication is enabled and there are some changes
-../src/osmdbt-testdb -c "$CONFIG" 2>&1 | grep "There are 7 changes in your configured replication slot."
+../src/osmdbt-testdb -c "$CONFIG" 2>&1 | grep "There are 13 changes in your configured replication slot."
 
 # Reading log without catchup
 ../src/osmdbt-get-log --config="$CONFIG"

@@ -15,7 +15,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 #
 #-----------------------------------------------------------------------------
 
-project(osmdbt-pgoutput VERSION 0.1)
+project(osmdbt-pgoutput VERSION 0.6)
 
 set(AUTHOR "Jochen Topf <jochen@topf.org>")
 
