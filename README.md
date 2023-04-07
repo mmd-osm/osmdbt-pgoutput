@@ -1,5 +1,5 @@
 
-# OSM Database Tools
+# OSM Database Tools (pgoutput fork)
 
 Tools for creating replication feeds from the main OSM database.
 
@@ -95,12 +95,9 @@ cmake ..
 cmake --build .
 ```
 
-If there are several versions of PostgreSQL installed on your system, you
-might have to set the `PG_CONFIG` variable to the full path like so:
-
-```
-cmake -DPG_CONFIG=/usr/lib/postgresql/14/bin/pg_config ..
-```
+Note: Unlike the [original osmdbt](https://github.com/openstreetmap/osmdbt) version,
+this fork uses the built-in `pgoutput` plugin. There's no need to build and deploy
+a custom `osm-logical` plugin anymore.
 
 ## Database Setup
 
@@ -144,10 +141,7 @@ To run the tests after build call `ctest`.
 
 To create a Debian/Ubuntu package, call `debuild -I`.
 
-The Debian package will contain the executables and the man pages. It will
-not contain the PostgreSQL plugin, because that needs to be built for the
-exact PostgreSQL version you have.
-
+The Debian package will contain the executables and the man pages.
 
 ## Usage
 
