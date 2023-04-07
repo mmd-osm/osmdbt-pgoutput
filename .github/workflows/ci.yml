@@ -46,13 +46,13 @@ jobs:
             c_compiler: clang
             cpp_compiler: clang++
           - image: "debian:testing"
-            pg_version: 14
+            pg_version: 15
           - image: "debian:testing"
-            pg_version: 14
+            pg_version: 15
             c_compiler: clang
             cpp_compiler: clang++
           - image: "debian:experimental"
-            pg_version: 14
+            pg_version: 15
     container:
       image: ${{ matrix.image }}
       env:
