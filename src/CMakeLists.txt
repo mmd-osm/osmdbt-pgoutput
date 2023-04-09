@@ -30,7 +30,7 @@ add_executable(osmdbt-enable-replication osmdbt-enable-replication.cpp db.cpp ${
 target_link_libraries(osmdbt-enable-replication ${PQXX_LIB} ${COMMON_LIBS})
 install(TARGETS osmdbt-enable-replication DESTINATION bin)
 
-add_executable(osmdbt-get-log osmdbt-get-log.cpp db.cpp lsn.cpp ${COMMON_SRCS})
+add_executable(osmdbt-get-log osmdbt-get-log.cpp db.cpp lsn.cpp pgoutput.cpp ${COMMON_SRCS})
 target_link_libraries(osmdbt-get-log ${PQXX_LIB} ${COMMON_LIBS})
 set_pthread_on_target(osmdbt-get-log)
 install(TARGETS osmdbt-get-log DESTINATION bin)

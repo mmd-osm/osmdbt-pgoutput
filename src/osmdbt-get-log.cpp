@@ -5,22 +5,16 @@
 #include "io.hpp"
 #include "lsn.hpp"
 #include "options.hpp"
+#include "pgoutput.hpp"
 #include "util.hpp"
 
-#include <osmium/osm/types.hpp>
 #include <osmium/util/verbose_output.hpp>
 
 #include <algorithm>
-#include <chrono>
 #include <ctime>
 #include <iostream>
 #include <iterator>
-#include <map>
-#include <optional>
 #include <string>
-#include <string_view>
-#include <type_traits>
-
 
 class GetLogOptions : public Options
 {
@@ -63,90 +57,6 @@ private:
     std::uint32_t m_max_changes = 0;
     bool m_catchup = false;
 }; // class GetLogOptions
-
-
-struct table_field_index {
-    std::string relation_name;
-    char object_type{};
-    int object_index{};
-    int changeset_index{};
-    int version_index{};
-    int redaction_index{};
-};
-
-
-struct message_parser_helper
-{
-    explicit message_parser_helper(const pqxx::binarystring &raw)
-    : msg(raw.get(), raw.size())  { }
-
-    template <typename T>
-    T read() {
-        auto result = read_network_byte_order<T>(msg.data() + offset);
-        offset += sizeof(T);
-        return result;
-    }
-
-    std::string read_string()
-    {
-        std::string result{msg.data() + offset};
-        offset += result.size() + 1;
-        return result;
-    }
-
-    std::string read_string(uint32_t len)
-    {
-        std::string result{msg.data() + offset, len};
-        offset += len;
-        return result;
-    }
-
-    std::vector< std::optional< std::string > > read_tuple_data() {
-
-        std::vector< std::optional< std::string > > res;
-        auto n_columns = read<int16_t>();
-
-        for (int i = 0; i < n_columns; i++) {
-            auto col_data_category = read<int8_t>();
-            switch (col_data_category) {
-                case 'n':
-                case 'u':
-                  res.emplace_back();
-                  break;
-                case 't': {
-                  auto col_length = read<int32_t>();
-                  res.emplace_back(read_string(col_length));
-                  break;
-                }
-                case 'b':
-                  // TODO
-                  res.emplace_back();
-                  break;
-            }
-        }
-
-        return res;
-    }
-
-
-private:
-    // pgoutput data is provided in network byte order (big endian)
-    template <typename T>
-    T read_network_byte_order(const char * input)
-    {
-        using T_unsigned = typename std::make_unsigned<T>::type;
-
-        // TODO: could use bswap intrinsic instead
-        T_unsigned result{};
-        for (unsigned int i = 0; i < sizeof(T); i++) {
-            result |= static_cast<unsigned char>(input[i]) << (8ull * (sizeof(T) - i - 1));
-        }
-        return static_cast<T>(result);
-    }
-
-    std::string_view msg;
-    int offset{};
-};
 
 bool app(osmium::VerboseOutput &vout, Config const &config,
          GetLogOptions const &options)
@@ -193,179 +103,69 @@ bool app(osmium::VerboseOutput &vout, Config const &config,
         vout << "There are " << result.size()
              << " entries in the replication log.\n";
 
-        std::map<int32_t, table_field_index> field_idx_by_relation_id;
-
         std::string data;
         data.reserve(result.size() * 50); // log lines should fit in 50 bytes
 
         bool data_in_current_transaction = false;
         bool has_actual_data = false;
+
+        pgoutput::parser parser;
+
         for (auto const &row : result) {
-            pqxx::binarystring binary_string{row[2]};
-            message_parser_helper msg{binary_string};
+            std::string message;
+            pqxx::binarystring binary_string(row[2]);
 
-            const char op = msg.read<uint8_t>();
+            parser.set_row(binary_string);
+            const auto op = parser.parse_op();  // read pgoutput operation
 
-            std::string message{};
+            switch (op) {
 
-            // Reference for pgoutput decoding:
-            // https://www.postgresql.org/docs/current/protocol-logicalrep-message-formats.html
+            case 'B': // begin transaction
+                  data_in_current_transaction = false;
+                  continue;
 
+            case 'C': // commit
+                  message = "C";
+                  break;
+
+            case 'R': // relation (pg table metadata)
             {
-                  switch (op) {
+                  parser.parse_op_relation();
+                  continue;
+            }
 
-                  case 'B': // begin
-                      data_in_current_transaction = false;
-                      continue;
+            case 'I': // insert
+            {
+                  message += parser.parse_op_insert();
+                  data_in_current_transaction = true;
+                  break;
+            }
 
-                  case 'C': // commit
-                      message = "C";
-                      break;
+            case 'U': // update
+            {
+                  message += parser.parse_op_update();
+                  data_in_current_transaction = true;
+                  break;
+            }
 
-                  case 'R': // relation
-                  {
-                      auto id = msg.read<int32_t>();
-                      auto ns = msg.read_string();
-                      auto relation_name = msg.read_string();
-                      /* auto replica_identity = */ msg.read<int8_t>();
-                      auto number_of_columns = msg.read<uint16_t>();
-
-                      table_field_index idx;
-                      std::string object_id_field;
-
-                      idx.relation_name = relation_name;
-
-                      if (relation_name == "nodes") {
-                          idx.object_type = 'n';
-                          object_id_field = "node_id";
-
-                      } else if (relation_name == "ways") {
-                          idx.object_type = 'w';
-                          object_id_field = "way_id";
-
-                      } else if (relation_name == "relations") {
-                          idx.object_type = 'r';
-                          object_id_field = "relation_id";
-                      } else {
-                          continue;
-                      }
-
-                      int found_columns = 0;
-
-                      for (int col = 0; col < number_of_columns; col++) {
-                          /* auto flags = */ msg.read<int8_t>();
-                          auto column_name = msg.read_string();
-                          /* auto column_type = */ msg.read<int32_t>();
-                          /* auto type_modifier = */ msg.read<int32_t>();
-
-                          if (column_name == object_id_field) {
-                              idx.object_index = col;
-                              found_columns++;
-                          } else if (column_name == "changeset_id") {
-                              idx.changeset_index = col;
-                              found_columns++;
-                          } else if (column_name == "version") {
-                              idx.version_index = col;
-                              found_columns++;
-                          } else if (column_name == "redaction_id") {
-                              idx.redaction_index = col;
-                              found_columns++;
-                          }
-                      }
-
-                      if (found_columns != 4) {
-                          vout << "Missing column in relation " << relation_name
-                               << "\n";
-                          return false;
-                      }
-
-                      field_idx_by_relation_id[id] = idx;
-                      continue;
-                  }
-
-                  case 'I': // insert
-                  {
-                      auto relation_id = msg.read<int32_t>();
-                      /* auto new_tuple_byte = */ msg.read<uint8_t>();
-                      auto new_tuple = msg.read_tuple_data();
-                      auto field_idx = field_idx_by_relation_id.at(relation_id);
-
-                      message += "N ";
-                      message += field_idx.object_type;
-                      message +=
-                          new_tuple[field_idx.object_index].value_or("XXX");
-                      message += " v";
-                      message +=
-                          new_tuple[field_idx.version_index].value_or("XXX");
-                      message += " c";
-                      message +=
-                          new_tuple[field_idx.changeset_index].value_or("XXX");
-
-                      data_in_current_transaction = true;
-                      break;
-                  }
-
-                  case 'U': // update
-                  {
-                      auto relation_id = msg.read<int32_t>();
-                      auto tuple_byte = msg.read<uint8_t>();
-                      // consume key or old tuple data, we only care about the new tuple
-                      if (tuple_byte == 'K' || tuple_byte == 'O') {
-                          msg.read_tuple_data();
-                          tuple_byte = msg.read<uint8_t>();
-                      }
-
-                      if (tuple_byte != 'N') {
-                          vout << "Update: expected N tuple byte\n";
-                          return false;
-                      }
-
-                      auto new_tuple = msg.read_tuple_data();
-                      auto field_idx = field_idx_by_relation_id.at(relation_id);
-
-                      if (!new_tuple[field_idx.redaction_index].has_value()) {
-                          message +=
-                              "UPDATE with redaction_id set to NULL for " +
-                              field_idx.relation_name;
-                      }
-
-                      message += "R ";
-                      message += field_idx.object_type;
-                      message +=
-                          new_tuple[field_idx.object_index].value_or("XXX");
-                      message += " v";
-                      message +=
-                          new_tuple[field_idx.version_index].value_or("XXX");
-                      message += " c";
-                      message +=
-                          new_tuple[field_idx.changeset_index].value_or("XXX");
-                      message += " ";
-                      message +=
-                          new_tuple[field_idx.redaction_index].value_or("");
-
-                      data_in_current_transaction = true;
-                      break;
-                  }
-
-                  default:
-                      continue;
-                  }
+            default:  // skip other operations
+                  continue;
             }
 
             if (data_in_current_transaction) {
-                data.append(row[0].c_str());
-                data += ' ';
-                data.append(row[1].c_str());
-                data += ' ';
-                data.append(message);
-                data += '\n';
+                  data.append(row[0].c_str());
+                  data += ' ';
+                  data.append(row[1].c_str());
+                  data += ' ';
+                  data.append(message);
+                  data += '\n';
             }
 
             if (message[0] == 'C') {
-                lsn = row[0].c_str();
-                data_in_current_transaction = false;
+                  lsn = row[0].c_str();
+                  data_in_current_transaction = false;
             } else if (message[0] == 'N') {
-                has_actual_data = true;
+                  has_actual_data = true;
             }
         }
 

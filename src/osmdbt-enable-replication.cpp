@@ -13,15 +13,18 @@ bool app(osmium::VerboseOutput &vout, Config const &config,
 {
     vout << "Connecting to database...\n";
     pqxx::connection db{config.db_connection()};
-    db.prepare("enable-replication",
-               "SELECT * FROM pg_create_logical_replication_slot($1, 'pgoutput');");
+    db.prepare(
+        "enable-replication",
+        "SELECT * FROM pg_create_logical_replication_slot($1, 'pgoutput');");
 
     {
         pqxx::work txn{db};
 
         vout << "Database version: " << get_db_version(txn) << '\n';
 
-        txn.exec("CREATE PUBLICATION " + config.publication() + " FOR TABLE ONLY nodes, ways, relations;");  // TODO: table names as config option
+        txn.exec(
+            "CREATE PUBLICATION " + config.publication() +
+            " FOR TABLE ONLY nodes, ways, relations;"); // TODO: table names as config option
         txn.commit();
         vout << "Publication created.\n";
     }
