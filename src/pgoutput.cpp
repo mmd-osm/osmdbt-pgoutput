@@ -191,13 +191,7 @@ std::string parser::parse_op_update()
 
     auto columns = m_relevant_columns_per_rel_id[relation_id];
 
-    if (!new_tuple[columns.redaction_column].has_value()) {
-        result += "UPDATE with redaction_id set to NULL for " +
-                   columns.relation_name + " ";
-    } else {
-        result += "R ";
-    }
-
+    result += "R ";
     result += columns.object_type;
     result += *new_tuple[columns.osm_object_column];
     result += " v";
@@ -205,7 +199,7 @@ std::string parser::parse_op_update()
     result += " c";
     result += *new_tuple[columns.changeset_column];
     result += " ";
-    result += new_tuple[columns.redaction_column].value_or("");
+    result += new_tuple[columns.redaction_column].value_or("NULL");
     return result;
 }
 
