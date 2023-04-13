@@ -5,7 +5,6 @@ Priority: optional
 Build-Depends: debhelper (>= 10~),
                cmake,
                gettext-base,
-               libboost-filesystem-dev,
                libboost-program-options-dev,
                libbz2-dev,
                libexpat1-dev,

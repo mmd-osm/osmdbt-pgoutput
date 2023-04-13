@@ -18,9 +18,8 @@
 #include <osmium/util/string.hpp>
 #include <osmium/util/verbose_output.hpp>
 
-#include <boost/filesystem.hpp>
-
 #include <cstddef>
+#include <filesystem>
 #include <limits>
 #include <string>
 #include <utility>
@@ -141,8 +140,8 @@ static State get_state(Config const &config, CreateDiffOptions const &options,
         return State{options.init_state(), timestamp};
     }
 
-    boost::filesystem::path state_file{config.changes_dir() + "state.txt"};
-    if (!boost::filesystem::exists(state_file)) {
+    std::filesystem::path state_file{config.changes_dir() + "state.txt"};
+    if (!std::filesystem::exists(state_file)) {
         throw std::runtime_error{"Missing state file: '" + state_file.string() +
                                  "'"};
     }
@@ -590,8 +589,8 @@ bool app(osmium::VerboseOutput &vout, Config const &config,
     if (log_files.empty()) {
         vout << "No log files on command line. Looking for log files in log "
                 "directory...\n";
-        boost::filesystem::path p{config.log_dir()};
-        for (auto const &file : boost::filesystem::directory_iterator(p)) {
+        std::filesystem::path p{config.log_dir()};
+        for (auto const &file : std::filesystem::directory_iterator(p)) {
             if (file.path().extension() == ".log") {
                 log_files.push_back(file.path().filename().string());
             }
@@ -715,26 +714,26 @@ bool app(osmium::VerboseOutput &vout, Config const &config,
         sync_dir(config.tmp_dir());
 
         vout << "Creating directories...\n";
-        boost::filesystem::create_directories(config.changes_dir() +
+        std::filesystem::create_directories(config.changes_dir() +
                                               state.dir2_path());
 
         vout << "Moving files into their final locations...\n";
-        boost::filesystem::rename(new_change_file_name + ".gz",
+        std::filesystem::rename(new_change_file_name + ".gz",
                                   config.changes_dir() + state.osc_path() +
                                       ".gz");
 
         if (options.with_pbf_output()) {
-            boost::filesystem::rename(new_change_file_name + ".pbf",
+            std::filesystem::rename(new_change_file_name + ".pbf",
                                       config.changes_dir() + state.osc_path() +
                                           ".pbf");
         }
 
-        boost::filesystem::rename(config.tmp_dir() + "new-state.txt",
+        std::filesystem::rename(config.tmp_dir() + "new-state.txt",
                                   config.changes_dir() + state.state_path());
         sync_dir(config.changes_dir() + state.dir2_path());
         sync_dir(config.changes_dir() + state.dir1_path());
 
-        boost::filesystem::rename(config.tmp_dir() + "new-state.txt.copy",
+        std::filesystem::rename(config.tmp_dir() + "new-state.txt.copy",
                                   config.changes_dir() + "state.txt");
         sync_dir(config.changes_dir());
 
