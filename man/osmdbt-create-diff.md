@@ -12,12 +12,7 @@ osmdbt-create-diff - Read replication log and create OSM change file from it
 # DESCRIPTION
 
 Read log files created by **osmdbt-get-log** and create an OSM change file
-in XML format and one in PBF format from it.
-
-Change files in PBF format are not established yet, but the functionality
-is already built in. But by default they will be left in the tmp directory
-and not moved to their final place. See the **-p, \--with-pbf-output**
-option.
+in XML format.
 
 Reads all files specified with **-f, \--log-file** or all log files in
 the `log_dir`. Sorts all objects in the files by type, id, and version and
@@ -66,12 +61,6 @@ The sequence of actions in detail:
 \--with-comment
 :   Add comment on first line with current date. This is for backwards
     compatibility with Osmosis which created this line.
-
--p, \--with-pbf-output
-:   This command will always also create a change file in PBF format. But it
-    will be left in the tmp directory where it was created. If you want it
-    to be moved to the final directory like the change file in XML format,
-    use this option.
 
 -s, \--sequence-number=NUM
 :   Use sequence number NUM. Do not read `state.txt`.

@@ -10,7 +10,6 @@
 #include "version.hpp"
 
 #include <osmium/io/gzip_compression.hpp>
-#include <osmium/io/pbf_output.hpp>
 #include <osmium/io/xml_output.hpp>
 #include <osmium/memory/buffer.hpp>
 #include <osmium/osm/types.hpp>
@@ -52,11 +51,6 @@ public:
 
     [[nodiscard]] bool dry_run() const noexcept { return m_dry_run; }
 
-    [[nodiscard]] bool with_pbf_output() const noexcept
-    {
-        return m_with_pbf_output;
-    }
-
 private:
     void add_command_options(po::options_description &desc) override
     {
@@ -68,8 +62,7 @@ private:
             ("log-file,f", po::value<std::vector<std::string>>(), "Read specified log file")
             ("max-changes,m", po::value<uint32_t>(), "Maximum number of changes (default: no limit)")
             ("dry-run,n", "Dry-run, only create files in tmp dir")
-            ("sequence-number,s", po::value<std::size_t>(), "Initialize state with specified value")
-            ("with-pbf-output,p", "Also generate change files in PBF format");
+            ("sequence-number,s", po::value<std::size_t>(), "Initialize state with specified value");
         // clang-format on
 
         desc.add(opts_cmd);
@@ -92,9 +85,6 @@ private:
         if (vm.count("sequence-number")) {
             m_init_state = vm["sequence-number"].as<std::size_t>();
         }
-        if (vm.count("with-pbf-output")) {
-            m_with_pbf_output = true;
-        }
     }
 
     std::vector<std::string> m_log_file_names;
@@ -102,7 +92,6 @@ private:
     std::uint32_t m_max_changes = std::numeric_limits<uint32_t>::max();
     bool m_with_comment = false;
     bool m_dry_run = false;
-    bool m_with_pbf_output = false;
 
 }; // class CreateDiffOptions
 
@@ -568,15 +557,9 @@ osmium::memory::Buffer process_relations(pqxx::dbtransaction &txn,
     return buffer;
 }
 
-static void write_to(osmium::memory::Buffer &buffer, osmium::io::Writer &w1,
-                     osmium::io::Writer &w2)
+static void write_to(osmium::memory::Buffer &buffer, osmium::io::Writer &w)
 {
-    osmium::memory::Buffer buffer_copy{buffer.committed()};
-    buffer_copy.add_buffer(buffer);
-    buffer_copy.commit();
-
-    w1(std::move(buffer_copy));
-    w2(std::move(buffer));
+    w(std::move(buffer));
 }
 
 bool app(osmium::VerboseOutput &vout, Config const &config,
@@ -646,17 +629,12 @@ bool app(osmium::VerboseOutput &vout, Config const &config,
 
     auto const new_change_file_name = config.tmp_dir() + "new-change.osc";
     vout << "Opening output file '" << new_change_file_name << ".gz'...\n";
-    vout << "Opening output file '" << new_change_file_name << ".pbf'...\n";
 
     osmium::io::Header header;
     header.has_multiple_object_versions();
     header.set("generator", "osmdbt-create-diff/" + get_osmdbt_version());
 
     osmium::io::Writer writer_xml{new_change_file_name + ".gz", header,
-                                  osmium::io::overwrite::allow,
-                                  osmium::io::fsync::yes};
-
-    osmium::io::Writer writer_pbf{new_change_file_name + ".pbf", header,
                                   osmium::io::overwrite::allow,
                                   osmium::io::fsync::yes};
 
@@ -672,24 +650,23 @@ bool app(osmium::VerboseOutput &vout, Config const &config,
         auto buffer =
             process_nodes(txn, cucache, objects_todo.nodes(), &max_timestamp);
 
-        write_to(buffer, writer_pbf, writer_xml);
+        write_to(buffer, writer_xml);
     }
     if (!objects_todo.ways().empty()) {
         auto buffer =
             process_ways(txn, cucache, objects_todo.ways(), &max_timestamp);
 
-        write_to(buffer, writer_pbf, writer_xml);
+        write_to(buffer, writer_xml);
     }
     if (!objects_todo.relations().empty()) {
         auto buffer = process_relations(txn, cucache, objects_todo.relations(),
                                         &max_timestamp);
 
-        write_to(buffer, writer_pbf, writer_xml);
+        write_to(buffer, writer_xml);
     }
 
     txn.commit();
     writer_xml.close();
-    writer_pbf.close();
 
     vout << "Wrote and synced output file.\n";
 
@@ -721,12 +698,6 @@ bool app(osmium::VerboseOutput &vout, Config const &config,
         std::filesystem::rename(new_change_file_name + ".gz",
                                   config.changes_dir() + state.osc_path() +
                                       ".gz");
-
-        if (options.with_pbf_output()) {
-            std::filesystem::rename(new_change_file_name + ".pbf",
-                                      config.changes_dir() + state.osc_path() +
-                                          ".pbf");
-        }
 
         std::filesystem::rename(config.tmp_dir() + "new-state.txt",
                                   config.changes_dir() + state.state_path());

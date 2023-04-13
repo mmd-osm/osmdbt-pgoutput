@@ -33,7 +33,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(Boost 1.55.0 REQUIRED COMPONENTS program_options)
 
-find_package(Osmium 2.15.0 REQUIRED COMPONENTS io)
+find_package(Osmium 2.15.0 REQUIRED COMPONENTS xml)
 
 find_package(ZLIB)
 find_package(Threads)

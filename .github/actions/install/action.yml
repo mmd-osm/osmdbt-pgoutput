@@ -25,8 +25,7 @@ runs:
             zlib1g-dev
       shell: bash
 
-    - name: Install libosmium and protozero from git
+    - name: Install libosmium from git
       run: |
         git clone --quiet --depth 1 https://github.com/osmcode/libosmium.git ../libosmium
-        git clone --quiet --depth 1 https://github.com/mapbox/protozero.git ../protozero
       shell: bash

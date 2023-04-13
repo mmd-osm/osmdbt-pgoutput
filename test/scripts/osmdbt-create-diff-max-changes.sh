@@ -53,6 +53,6 @@ test $(ls -1 "$TESTDIR/log" | grep done | wc -l) -eq 1
 # Determine name of done log file
 LOGFILE=$(ls $TESTDIR/log/*.log.done)
 
-# There should be 7 files in the test directory (config, 2xstate, 2xchange, 2xlog)
-test $(find "$TESTDIR" -type f | wc -l) -eq 7
+# There should be 7 files in the test directory (config, 2xstate, 1xchange, 2xlog)
+test $(find "$TESTDIR" -type f | wc -l) -eq 6
 
