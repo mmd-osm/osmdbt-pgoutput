@@ -9,50 +9,44 @@ jobs:
       fail-fast: false
       matrix:
         image:
-          - "ubuntu:20.04"    # gcc  9.3.0, clang 10.0.0, cmake 3.16.3, pg12
           - "ubuntu:22.04"    # gcc 11.2.0, clang 14.0.0, cmake 3.22.1, pg14
-          - "debian:bullseye" # gcc 10.2.1, clang 11.0.1, cmake 3.18.4, pg13
-          - "debian:testing"  # gcc 10.3.0, clang 11.1.0, cmake 3.21.3, pg14
-          - "debian:experimental"
+          - "ubuntu:24.04"    # gcc 13.2.0, clang 18.0.0, cmake 3.28.3, pg16
+          - "debian:bookworm" # gcc 10.2.1, clang 11.0.1, cmake 3.18.4, pg13
+          - "debian:trixie  " # gcc 13.2.0, clang 16.0.0, cmake 3.29.2, pg16
         build_type: [Debug]
         cpp_compiler: [g++]
         install_pg_apt_repo: [no]
         include:
-          - image: "ubuntu:20.04"
-            pg_version: 12
-          - image: "ubuntu:20.04"
-            pg_version: 14
-            install_pg_apt_repo: yes
           - image: "ubuntu:22.04"
             pg_version: 14
-          - image: "debian:bullseye"
+          - image: "ubuntu:24.04"
+            pg_version: 16
+          - image: "debian:bookworm"
             pg_version: 13
-          - image: "debian:bullseye"
-            pg_version: 14
             install_pg_apt_repo: yes
-          - image: "debian:bullseye"
-            pg_version: 13
+          - image: "debian:bookworm"
+            pg_version: 15
+          - image: "debian:bookworm"
+            pg_version: 15
             c_compiler: clang
             cpp_compiler: clang++
-          - image: "debian:bullseye"
-            pg_version: 13
+          - image: "debian:bookworm"
+            pg_version: 15
             c_compiler: clang
             cpp_compiler: clang++
-          - image: "debian:bullseye"
-            pg_version: 13
+          - image: "debian:bookworm"
+            pg_version: 15
             build_type: RelWithDebInfo
-          - image: "debian:bullseye"
-            pg_version: 13
-            c_compiler: clang
-            cpp_compiler: clang++
-          - image: "debian:testing"
-            pg_version: 15
-          - image: "debian:testing"
+          - image: "debian:bookworm"
             pg_version: 15
             c_compiler: clang
             cpp_compiler: clang++
-          - image: "debian:experimental"
-            pg_version: 15
+          - image: "debian:trixie"
+            pg_version: 16
+          - image: "debian:trixie"
+            pg_version: 16
+            c_compiler: clang
+            cpp_compiler: clang++
     container:
       image: ${{ matrix.image }}
       env:
@@ -64,7 +58,7 @@ jobs:
         DEBIAN_FRONTEND: noninteractive
         PG_VERSION: ${{ matrix.pg_version }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/install
       - name: Optionally activate PostgreSQL APT repo
         if: matrix.install_pg_apt_repo == 'yes'
