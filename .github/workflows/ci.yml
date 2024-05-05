@@ -12,7 +12,7 @@ jobs:
           - "ubuntu:22.04"    # gcc 11.2.0, clang 14.0.0, cmake 3.22.1, pg14
           - "ubuntu:24.04"    # gcc 13.2.0, clang 18.0.0, cmake 3.28.3, pg16
           - "debian:bookworm" # gcc 10.2.1, clang 11.0.1, cmake 3.18.4, pg13
-          - "debian:trixie  " # gcc 13.2.0, clang 16.0.0, cmake 3.29.2, pg16
+          - "debian:trixie"   # gcc 13.2.0, clang 16.0.0, cmake 3.29.2, pg16
         build_type: [Debug]
         cpp_compiler: [g++]
         install_pg_apt_repo: [no]
