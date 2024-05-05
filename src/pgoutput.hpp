@@ -28,8 +28,8 @@ struct row_low_level_parser
 {
     row_low_level_parser() = default;
 
-    explicit row_low_level_parser(const pqxx::binarystring &row)
-    : m_row(row.get(), row.size())
+    explicit row_low_level_parser(std::string_view row)
+    : m_row(row)
     {
     }
 
@@ -62,7 +62,7 @@ struct parser
 public:
     parser() = default;
 
-    void set_row(const pqxx::binarystring &row);
+    void set_row(std::string_view row);
 
     unsigned char parse_op();
 

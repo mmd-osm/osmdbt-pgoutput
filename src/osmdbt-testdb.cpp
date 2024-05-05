@@ -40,7 +40,7 @@ bool app(osmium::VerboseOutput &vout, Config const &config,
             }
             if (has_configured_replication_slot) {
                 db.prepare("peek",
-                           "SELECT * FROM pg_logical_slot_peek_binary_changes($1, "
+                           "SELECT lsn, xid, encode(data, 'hex') as data FROM pg_logical_slot_peek_binary_changes($1, "
                            "NULL, NULL, 'proto_version', '1', 'publication_names', $2);");
                 pqxx::result const result_peek =
                     txn.exec_prepared("peek", config.replication_slot(), config.publication());

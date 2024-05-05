@@ -74,7 +74,7 @@ T row_low_level_parser::read_network_byte_order(const char *input)
     return static_cast<T>(result);
 }
 
-void parser::set_row(const pqxx::binarystring &row)
+void parser::set_row(std::string_view row)
 {
     m_msg = row_low_level_parser(row);
 }
