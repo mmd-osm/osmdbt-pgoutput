@@ -13,6 +13,8 @@ Build-Depends: debhelper (>= 10~),
                libpqxx-dev,
                pandoc,
                postgresql-common,
+               postgresql-all,
+               postgresql-server-dev-all,
                zlib1g-dev
 Standards-Version: 4.3.0
 Homepage: https://github.com/openstreetmap/osmdbt
