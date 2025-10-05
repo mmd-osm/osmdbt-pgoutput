@@ -14,7 +14,12 @@ set -x
 # Load some test data
 psql --quiet <"$SRCDIR/meta.sql"
 psql --quiet <"$SRCDIR/testdata.sql"
+
+# Redact two node versions
 psql --quiet -c 'UPDATE nodes SET redaction_id = 10 WHERE version = 1;'
+
+# Undo previous redaction
+psql --quiet -c 'UPDATE nodes SET redaction_id = null WHERE version = 1;'
 
 # Reading log
 ../src/osmdbt-get-log --config="$CONFIG" --catchup
@@ -26,14 +31,22 @@ test $(ls -1 "$TESTDIR/log" | wc -l) -eq 1
 LOGFILE="$TESTDIR/log/"$(ls "$TESTDIR/log")
 
 # Check content of log file
-test $(wc -l <"$LOGFILE") -eq 10
-test $(grep --count ' C$' "$LOGFILE") -eq 2
-grep --quiet ' n10 v1 c1$' "$LOGFILE"
-grep --quiet ' n11 v1 c1$' "$LOGFILE"
-grep --quiet ' n10 v2 c2$' "$LOGFILE"
-grep --quiet ' n11 v2 c2$' "$LOGFILE"
-grep --quiet ' w20 v1 c1$' "$LOGFILE"
-grep --quiet ' r30 v1 c1$' "$LOGFILE"
+test $(wc -l <"$LOGFILE") -eq 13
+test $(grep --count ' C$' "$LOGFILE") -eq 3
+grep --quiet 'N n10 v1 c1$' "$LOGFILE"
+grep --quiet 'N n11 v1 c1$' "$LOGFILE"
+grep --quiet 'N n10 v2 c2$' "$LOGFILE"
+grep --quiet 'N n11 v2 c2$' "$LOGFILE"
+grep --quiet 'N w20 v1 c1$' "$LOGFILE"
+grep --quiet 'N r30 v1 c1$' "$LOGFILE"
+
+# Check redacted node versions along with redaction id
+grep --quiet 'R n10 v1 c1 10$' "$LOGFILE"
+grep --quiet 'R n11 v1 c1 10$' "$LOGFILE"
+
+# Check un-redacted node versions along with NULL redaction id
+grep --quiet 'R n10 v1 c1 NULL$' "$LOGFILE"
+grep --quiet 'R n11 v1 c1 NULL$' "$LOGFILE"
 
 ../src/osmdbt-create-diff --config="$CONFIG" --sequence-number=42 --dry-run
 

@@ -13,6 +13,11 @@ set -x
 
 # Load some test data
 psql --quiet <"$SRCDIR/meta.sql"
+
+# Catching up on unrelated changes from meta.sql set up
+# pgoutput creates an empty BEGIN / COMMIT pair for it.
+../src/osmdbt-get-log --config="$CONFIG" --catchup
+
 psql --quiet <"$SRCDIR/testdata-2.sql"
 
 # Reading log without catchup

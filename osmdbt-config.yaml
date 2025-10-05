@@ -5,6 +5,7 @@ database:
     dbname: osm
     user: osm
     password: osm
+    publication: osm_publication
     replication_slot: osm_repl
 log_dir: /tmp
 changes_dir: /tmp

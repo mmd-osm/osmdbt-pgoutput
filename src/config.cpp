@@ -107,6 +107,7 @@ Config::Config(std::string const &config_file, osmium::VerboseOutput &vout)
         set_config(m_config["database"]["password"], m_db_password);
         set_config(m_config["database"]["replication_slot"],
                    m_replication_slot);
+        set_config(m_config["database"]["publication"], m_publication);
     }
 
     set_dir(m_config["log_dir"], &m_log_dir);
@@ -127,6 +128,7 @@ Config::Config(std::string const &config_file, osmium::VerboseOutput &vout)
     vout << "    Name: " << m_db_dbname << '\n';
     vout << "    User: " << m_db_user << '\n';
     vout << "    Password: (not shown)\n";
+    vout << "    Publication: " << m_publication << '\n';
     vout << "    Replication Slot: " << m_replication_slot << '\n';
     vout << "  Directory for log files: " << m_log_dir << '\n';
     vout << "  Directory for change files: " << m_changes_dir << '\n';
@@ -142,6 +144,11 @@ std::string const &Config::db_connection() const noexcept
 std::string const &Config::replication_slot() const noexcept
 {
     return m_replication_slot;
+}
+
+std::string const &Config::publication() const noexcept
+{
+    return m_publication;
 }
 
 std::string const &Config::log_dir() const noexcept { return m_log_dir; }

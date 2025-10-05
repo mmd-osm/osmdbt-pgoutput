@@ -17,6 +17,7 @@ public:
 
     std::string const &db_connection() const noexcept;
     std::string const &replication_slot() const noexcept;
+    std::string const &publication() const noexcept;
     std::string const &log_dir() const noexcept;
     std::string const &changes_dir() const noexcept;
     std::string const &tmp_dir() const noexcept;
@@ -31,7 +32,8 @@ private:
     std::string m_db_user{"osm"};
     std::string m_db_password{"osm"};
 
-    std::string m_db_connection;
+    std::string m_db_connection{};
+    std::string m_publication{"osm_publication"};
     std::string m_replication_slot{"osm_repl"};
 
     std::string m_log_dir{"/tmp/"};

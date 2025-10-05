@@ -1,5 +1,5 @@
 
-# OSM Database Tools
+# OSM Database Tools (pgoutput fork)
 
 Tools for creating replication feeds from the main OSM database.
 
@@ -17,11 +17,6 @@ You also need the following libraries:
         https://osmcode.org/libosmium
         Debian/Ubuntu: libosmium2-dev
         Fedora/CentOS: libosmium-devel
-
-    Protozero (>= 1.6.3)
-        https://github.com/mapbox/protozero
-        Debian/Ubuntu: libprotozero-dev
-        Fedora/CentOS: protozero-devel
 
     boost-program-options (>= 1.55)
         https://www.boost.org/doc/libs/1_55_0/doc/html/program_options.html
@@ -90,28 +85,9 @@ cmake ..
 cmake --build .
 ```
 
-If there are several versions of PostgreSQL installed on your system, you
-might have to set the `PG_CONFIG` variable to the full path like so:
-
-```
-cmake -DPG_CONFIG=/usr/lib/postgresql/14/bin/pg_config ..
-```
-
-If you don't want to build the PostgreSQL plugin set `BUILD_PLUGIN` to `OFF`.
-
-```
-cmake -DBUILD_PLUGIN=OFF ..
-```
-
-If you only want to build the PostgreSQL plugin:
-
-```
-cd postgresql-plugin
-mkdir build
-cd build
-cmake ..
-cmake --build .
-```
+Note: Unlike the [original osmdbt](https://github.com/openstreetmap/osmdbt) version,
+this fork uses the built-in `pgoutput` plugin. There's no need to build and deploy
+a custom `osm-logical` plugin anymore.
 
 ## Database Setup
 
@@ -157,10 +133,7 @@ To run the tests after build call `ctest`.
 
 To create a Debian/Ubuntu package, call `debuild -I`.
 
-The Debian package will contain the executables and the man pages. It will
-not contain the PostgreSQL plugin, because that needs to be built for the
-exact PostgreSQL version you have.
-
+The Debian package will contain the executables and the man pages.
 
 ## To Create a Release
 
