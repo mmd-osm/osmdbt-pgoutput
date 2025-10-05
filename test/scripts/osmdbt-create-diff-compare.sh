@@ -14,7 +14,7 @@ psql --quiet <"$SRCDIR/osmdbt-create-diff-compare.sql"
 
 ../src/osmdbt-get-log --config="$CONFIG" --catchup
 
-../src/osmdbt-create-diff --config="$CONFIG" --sequence-number=42 --with-pbf-output
+../src/osmdbt-create-diff --config="$CONFIG" --sequence-number=42
 
 CHANGE_FILE="$TESTDIR/changes/000/000/042.osc"
 

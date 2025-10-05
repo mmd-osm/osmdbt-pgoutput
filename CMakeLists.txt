@@ -15,7 +15,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 #
 #-----------------------------------------------------------------------------
 
-project(osmdbt VERSION 0.9)
+project(osmdbt-pgoutput VERSION 0.9)
 
 set(AUTHOR "Jochen Topf <jochen@topf.org>")
 
@@ -25,8 +25,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-option(BUILD_PLUGIN "Build PostgreSQL plugin" ON)
-
 #-----------------------------------------------------------------------------
 #
 #  Find external dependencies
@@ -35,7 +33,7 @@ option(BUILD_PLUGIN "Build PostgreSQL plugin" ON)
 
 find_package(Boost 1.55.0 REQUIRED COMPONENTS program_options)
 
-find_package(Osmium 2.15.0 REQUIRED COMPONENTS io)
+find_package(Osmium 2.15.0 REQUIRED COMPONENTS xml)
 
 find_package(ZLIB)
 find_package(Threads)
@@ -164,10 +162,5 @@ add_subdirectory(test)
 
 add_subdirectory(man)
 add_subdirectory(src)
-
-if(BUILD_PLUGIN)
-    add_subdirectory(postgresql-plugin)
-endif()
-
 
 #-----------------------------------------------------------------------------

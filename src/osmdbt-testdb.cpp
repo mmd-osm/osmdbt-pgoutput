@@ -45,15 +45,10 @@ bool app(osmium::VerboseOutput &vout, Config const &config,
 
     {
         pqxx::result const result =
-            db_version >= 10
-                ? txn.exec(
+                txn.exec(
                       "SELECT slot_name, database, confirmed_flush_lsn FROM "
                       "pg_replication_slots WHERE slot_type = 'logical' AND "
-                      "plugin = 'osm-logical';")
-                : txn.exec(
-                      "SELECT slot_name, database, 'unknown' AS lsn FROM "
-                      "pg_replication_slots WHERE slot_type = 'logical' AND "
-                      "plugin = 'osm-logical';");
+                      "plugin = 'pgoutput';");
 
         if (result.empty()) {
             vout << "Replication not enabled\n";
@@ -69,10 +64,10 @@ bool app(osmium::VerboseOutput &vout, Config const &config,
             }
             if (has_configured_replication_slot) {
                 db.prepare("peek",
-                           "SELECT * FROM pg_logical_slot_peek_changes($1, "
-                           "NULL, NULL);");
+                           "SELECT lsn, xid, encode(data, 'hex') as data FROM pg_logical_slot_peek_binary_changes($1, "
+                           "NULL, NULL, 'proto_version', '1', 'publication_names', $2);");
                 pqxx::result const result_peek =
-                    txn.exec_prepared("peek", config.replication_slot());
+                    txn.exec_prepared("peek", config.replication_slot(), config.publication());
                 if (result_peek.empty()) {
                     vout << "There are no";
                 } else {

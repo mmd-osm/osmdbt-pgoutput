@@ -71,7 +71,7 @@ The config file contains the following settings:
 
 # REPLICATION LOG
 
-The database writes a replication log using the `osm-logical` plugin.
+The database writes a replication log using the `pgoutput` plugin.
 
 The log has one entry per line and the following fields separated by spaces:
 

@@ -12,7 +12,6 @@ runs:
                 -DPG_CONFIG=/usr/lib/postgresql/${PG_VERSION}/bin/pg_config \
                 -DPG_VIRTUALENV_VERSION=-v${PG_VERSION} \
                 -DOSMIUM_INCLUDE_DIR=../../libosmium/include \
-                -DPROTOZERO_INCLUDE_DIR=../../protozero/include \
                 ..
         shell: bash
         working-directory: build
